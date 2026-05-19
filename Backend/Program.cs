@@ -6,8 +6,8 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using Hangfire;
-using Hangfire.SqlServer;
+// using Hangfire;
+// using Hangfire.SqlServer;
 using QuestPDF.Infrastructure;
 using Backend.Data;
 using Backend.Models;
@@ -98,12 +98,12 @@ builder.Services.AddCors(options =>
 });
 
 // ── Hangfire ──────────────────────────────────────────────
-builder.Services.AddHangfire(config => config
-    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-    .UseSimpleAssemblyNameTypeSerializer()
-    .UseRecommendedSerializerSettings()
-    .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddHangfireServer();
+// builder.Services.AddHangfire(config => config
+//     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+//     .UseSimpleAssemblyNameTypeSerializer()
+//     .UseRecommendedSerializerSettings()
+//     .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
+// builder.Services.AddHangfireServer();
 
 // ── FluentValidation ──────────────────────────────────────
 builder.Services.AddFluentValidationAutoValidation();
@@ -124,7 +124,7 @@ builder.Services.AddScoped<IProductionCommissionService,ProductionCommissionServ
 builder.Services.AddScoped<IReportService,              ReportService>();
 builder.Services.AddScoped<IDashboardService,           DashboardService>();
 builder.Services.AddScoped<IUtilityConfigService,       UtilityConfigService>();
-builder.Services.AddScoped<BackgroundJobService>();
+// builder.Services.AddScoped<BackgroundJobService>();
 // builder.Services.AddScoped<JwtHelper>();
 
 // ── Swagger ───────────────────────────────────────────────
@@ -171,19 +171,29 @@ app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseHangfireDashboard("/hangfire");
-// ── Schedule Background Jobs ──────────────────────────────
-RecurringJob.AddOrUpdate<BackgroundJobService>(
-    "overdue-surcharge",
-    job => job.ApplyOverdueSurchargeAsync(),
-    Cron.Daily // runs every day at midnight
-);
+// app.UseHangfireDashboard("/hangfire");
 
-RecurringJob.AddOrUpdate<BackgroundJobService>(
-    "yearly-rent-increment",
-    job => job.ApplyYearlyRentIncrementAsync(),
-    Cron.Daily // runs daily, but logic only fires on anniversary date
-);
+// ── Serve React App ───────────────────────────────────────
+app.UseDefaultFiles();   // serves index.html for "/"
+app.UseStaticFiles();    // serves JS/CSS/assets from wwwroot
+
+// ── SPA Fallback (for React Router) ──────────────────────
+app.MapFallbackToFile("index.html");
+
+// ── Schedule Background Jobs ──────────────────────────────
+// RecurringJob.AddOrUpdate<BackgroundJobService>(
+//     "overdue-surcharge",
+//     job => job.ApplyOverdueSurchargeAsync(),
+//     Cron.Daily // runs every day at midnight
+// );
+
+// RecurringJob.AddOrUpdate<BackgroundJobService>(
+//     "yearly-rent-increment",
+//     job => job.ApplyYearlyRentIncrementAsync(),
+//     Cron.Daily // runs daily, but logic only fires on anniversary date
+// );
+
+
 app.MapControllers();
 
 app.Run();
